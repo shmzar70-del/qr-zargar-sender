@@ -2,6 +2,16 @@
 <html>
 <head>
     
+
+<script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+    .then(() => console.log('✅ Service Worker ثبت شد'))
+    .catch(err => console.log('❌ خطا:', err));
+}
+</script>
+
+
     
 <link rel="manifest" href="manifest.json">
     

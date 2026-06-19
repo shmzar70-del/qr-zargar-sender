@@ -4,9 +4,13 @@
   "display": "standalone",
   "name": "Qr zargar sender",
   "orientation": "any",
-  "scope": "/",
+  "scope": "/qr-zargar-sender/",
+
   "short_name": "Qr sender",
-  "start_url": "/",
+ 
+
+"start_url": "/qr-zargar-sender/",
+
   "theme_color": "#9825d5",
   "id": "io.github.shmzar70.qrzargarsender",
   "description": "Halfline file transfer using QR code",

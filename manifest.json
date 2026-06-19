@@ -9,5 +9,17 @@
   "start_url": "/",
   "theme_color": "#9825d5",
   "id": "io.github.shmzar70.qrzargarsender",
-  "description": "Halfline file transfer using QR code"
+  "description": "Halfline file transfer using QR code",
+  "icons": [
+    {
+      "src": "launchericon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "launchericon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }

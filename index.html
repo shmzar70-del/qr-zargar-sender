@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    
+<link rel="manifest" href="manifest.json">
+    
+    
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Sender & Receiver (META هر دور)</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        background: #0a0a0a;
+        color: #0f0;
+        font-family: monospace;
+        text-align: center;
+        padding: 10px;
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .tab-btn {
+        background: #222;
+        color: #0f0;
+        border: 2px solid #0f0;
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .tab-btn.active {
+        background: #0f0;
+        color: #000;
+    }
+    .tab-btn:hover {
+        background: #2a2a2a;
+    }
+    .tab-content {
+        display: none;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .tab-content.active { display: block; }
+    .panel {
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 10px;
+    }
+    video, canvas {
+        width: 100%;
+        max-width: 420px;
+        border-radius: 12px;
+        background: #000;
+        display: block;
+        margin: 0 auto;
+    }
+    video { border: 3px solid #0f0; }
+    canvas#qrCanvas {
+        border: 3px solid #0f0;
+        max-width: 420px;
+        width: 100%;
+        aspect-ratio: 1/1;
+        background: #fff;
+        display: block;
+        margin: 0 auto;
+    }
+    .status {
+        margin: 12px auto;
+        padding: 12px;
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 8px;
+        font-size: 14px;
+        min-height: 60px;
+        word-break: break-all;
+    }
+    .bar {
+        max-width: 420px;
+        height: 24px;
+        background: #222;
+        margin: 8px auto;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .fill {
+        height: 100%;
+        width: 0%;
+        background: #f00;
+        transition: width 0.3s, background 0.5s;
+    }
+    .log {
+        max-width: 420px;
+        margin: 10px auto;
+        text-align: left;
+        font-size: 11px;
+        color: #aaa;
+        background: #111;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #222;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+    .log div {
+        border-bottom: 1px solid #1a1a1a;
+        padding: 2px 0;
+    }
+    .highlight { color: #ff0; }
+    .error { color: #f44; }
+    .success { color: #4f4; }
+    .btn {
+        display: inline-block;
+        padding: 10px 20px;
+        background: #444;
+        color: #fff;
+        font-size: 14px;
+        border: 1px solid #666;
+        border-radius: 8px;
+        cursor: pointer;
+        margin: 4px;
+        transition: 0.3s;
+        user-select: none;
+    }
+    .btn-primary { background: #0a0; border-color: #0f0; }
+    .btn-primary:hover { background: #0c0; }
+    .btn-danger { background: #a00; border-color: #f00; }
+    .btn-danger:hover { background: #c00; }
+    .btn-secondary { background: #555; border-color: #888; }
+    .btn-secondary:hover { background: #666; }
+    .slider-group {
+        margin: 8px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .slider-group label {
+        font-size: 13px;
+        min-width: 90px;
+        text-align: left;
+    }
+    .slider-group input[type="range"] {
+        flex: 1;
+        min-width: 100px;
+        background: #333;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 6px;
+        border-radius: 4px;
+        outline: none;
+    }
+    .slider-group input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #0f0;
+        cursor: pointer;
+    }
+    .slider-group input[type="range"]::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #0f0;
+        cursor: pointer;
+        border: none;
+    }
+    .color-picker-group {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 8px 0;
+    }
+    .color-picker-group label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+    }
+    .color-picker-group input[type="color"] {
+        width: 32px;
+        height: 32px;
+        border: 2px solid #0f0;
+        border-radius: 6px;
+        background: transparent;
+        cursor: pointer;
+        padding: 0;
+    }
+    .file-input-wrapper input[type="file"] { display: none; }
+    .file-input-wrapper .btn { background: #2a6; }
+    .flex-center { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
+    .mt-8 { margin-top: 8px; }
+    .mb-8 { margin-bottom: 8px; }
+    @media (max-width: 500px) {
+        .tab-btn { font-size: 14px; padding: 8px 16px; }
+        .panel { padding: 10px; }
+    }
+</style>
+</head>
+<body>
+<h3>📡 QR Sender & Receiver (META هر دور)</h3>
+<div class="tabs">
+    <button class="tab-btn active" data-tab="sender">📤 ارسال</button>
+    <button class="tab-btn" data-tab="receiver">📷 دریافت</button>
+</div>
+
+<!-- ===== تب ارسال ===== -->
+<div id="sender" class="tab-content active">
+    <div class="panel">
+        <canvas id="qrCanvas"></canvas>
+        <div class="status" id="senderStatus">⏳ آماده</div>
+        <div class="bar"><div class="fill" id="senderFill"></div></div>
+        <div class="file-input-wrapper">
+            <label class="btn btn-primary" for="fileInput">📂 انتخاب فایل</label>
+            <input type="file" id="fileInput">
+            <button class="btn btn-danger" id="stopBtn">⏹ توقف</button>
+        </div>
+        <div class="slider-group">
+            <label>📏 اندازه QR</label>
+            <input type="range" id="sizeSlider" min="100" max="500" value="260" step="1">
+            <span id="sizeLabel">260</span>
+        </div>
+        <div class="slider-group">
+            <label>⚡ سرعت (تأخیر ثانیه)</label>
+            <input type="range" id="speedSlider" min="0.05" max="1.0" value="0.35" step="0.05">
+            <span id="speedLabel">0.35</span>
+        </div>
+        <div class="color-picker-group">
+            <label>پیش‌زمینه <input type="color" id="fillColor" value="#000000"></label>
+            <label>پس‌زمینه <input type="color" id="backColor" value="#ffffff"></label>
+        </div>
+        <div class="log" id="senderLog"></div>
+    </div>
+</div>
+
+<!-- ===== تب دریافت ===== -->
+<div id="receiver" class="tab-content">
+    <div class="panel">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" hidden></canvas>
+        <div class="bar"><div class="fill" id="receiverFill"></div></div>
+        <div class="status" id="receiverStatus">⏳ برای شروع، دکمهٔ «شروع دوربین» را بزنید</div>
+        <div class="flex-center mt-8">
+            <button class="btn btn-primary" id="startCameraBtn">📷 شروع دوربین</button>
+            <button class="btn btn-secondary" id="resetReceiverBtn">🔄 ریست</button>
+        </div>
+        <div class="log" id="receiverLog"></div>
+    </div>
+</div>
+
+<script src="qrcode.main.js"></script>
+<script src="jsQR.js"></script>
+<script>
+// ============================================================
+//  بررسی وجود jsQR
+// ============================================================
+if (typeof jsQR === 'undefined') {
+    document.getElementById('receiverStatus').innerHTML = '❌ فایل jsQR.js پیدا نشد!';
+    throw new Error('jsQR not loaded');
+}
+
+// ============================================================
+//  توابع پایه
+// ============================================================
+function crc32(str) {
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < str.length; i++) {
+        const byte = str.charCodeAt(i);
+        crc = crc ^ byte;
+        for (let j = 0; j < 8; j++) {
+            crc = (crc >>> 1) ^ ((crc & 1) ? 0xEDB88320 : 0);
+        }
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+// ============================================================
+//  متغیرهای عمومی
+// ============================================================
+let senderRunning = false, senderTimer = null, currentQRData = "ROT|IDLE";
+let qrSize = 260, delay = 0.35, fillColor = '#000000', backColor = '#ffffff';
+let isSending = false;
+
+// ============================================================
+//  بخش ارسال (Sender)
+// ============================================================
+const qrCanvas = document.getElementById('qrCanvas');
+const senderStatus = document.getElementById('senderStatus');
+const senderFill = document.getElementById('senderFill');
+const senderLog = document.getElementById('senderLog');
+const fileInput = document.getElementById('fileInput');
+const stopBtn = document.getElementById('stopBtn');
+const sizeSlider = document.getElementById('sizeSlider');
+const sizeLabel = document.getElementById('sizeLabel');
+const speedSlider = document.getElementById('speedSlider');
+const speedLabel = document.getElementById('speedLabel');
+const fillColorInput = document.getElementById('fillColor');
+const backColorInput = document.getElementById('backColor');
+
+function logSender(msg, type = '') {
+    const d = document.createElement('div');
+    d.innerHTML = `<span class="${type}">${msg}</span>`;
+    senderLog.appendChild(d);
+    senderLog.scrollTop = senderLog.scrollHeight;
+    if (senderLog.children.length > 100) senderLog.removeChild(senderLog.firstChild);
+}
+
+function generateQR(data) {
+    currentQRData = data;
+    if (qrCanvas) {
+        QRCode.toCanvas(qrCanvas, data, {
+            width: qrSize,
+            margin: 2,
+            color: { dark: fillColor, light: backColor }
+        }, err => { if (err) console.error(err); });
+    }
+}
+
+function updateSenderStatus(text) { senderStatus.innerHTML = text; }
+function updateSenderProgress(pct) {
+    senderFill.style.width = Math.min(100, pct) + '%';
+    let color;
+    if (pct < 40) color = `rgb(255, ${Math.round(pct * 6.375)}, 0)`;
+    else if (pct < 70) color = `rgb(${Math.round(255 - (pct-40)*8.5)}, 255, 0)`;
+    else color = `rgb(0, 255, ${Math.round((pct-70)*8.5)})`;
+    senderFill.style.background = color;
+}
+
+function stopSender() {
+    if (senderTimer) { clearTimeout(senderTimer); senderTimer = null; }
+    isSending = false; senderRunning = false;
+    updateSenderStatus('⏹ متوقف شد');
+    logSender('⏹ ارسال متوقف شد', 'highlight');
+    generateQR('ROT|IDLE');
+}
+
+function preparePackets(hexData) {
+    const chunkSize = 60;
+    const pcks = [];
+    const total = Math.ceil(hexData.length / chunkSize);
+    for (let i = 0; i < total; i++) {
+        const chunk = hexData.substring(i * chunkSize, (i + 1) * chunkSize);
+        const payload = `${i+1}|${total}|${chunk}`;
+        const crc = crc32(payload);
+        pcks.push(`ROT|DATA|${i+1}|${total}|${crc}|${chunk}`);
+    }
+    return pcks;
+}
+
+function startTransmission(pcks, meta) {
+    if (isSending) return;
+    isSending = true; senderRunning = true;
+    let round = 1, total = pcks.length;
+    let state = -1, packetIndex = 0;
+
+    // لاگ برای دیباگ
+    console.log("META =", meta);
+    console.log("FILE NAME =", meta.split('|')[2]);
+    console.log("MIME =", meta.split('|')[3]);
+
+    function sendNext() {
+        if (!senderRunning || !isSending) { stopSender(); return; }
+
+        if (state === -1) {
+            // ارسال META ۵ بار با تأخیر ۰.۵ ثانیه
+            let metaCount = 0;
+            function sendMeta() {
+                if (!senderRunning || !isSending) { stopSender(); return; }
+                if (metaCount < 5) {
+                    generateQR(meta);
+                    updateSenderStatus(`📄 ارسال META (${metaCount+1}/۵) دور ${round}...`);
+                    logSender(`📄 META (${metaCount+1}/۵) دور ${round}: ${meta}`, 'success');
+                    metaCount++;
+                    senderTimer = setTimeout(sendMeta, 500);
+                } else {
+                    // بعد از ۵ بار META، برو به DATA
+                    senderTimer = setTimeout(() => {
+                        state = 0;
+                        sendNext();
+                    }, 500);
+                }
+            }
+            sendMeta();
+            return;
+        }
+
+        if (state === 0) {
+            packetIndex = 0;
+            state = 1;
+        }
+
+        if (state === 1) {
+            if (packetIndex < total) {
+                const pkt = pcks[packetIndex];
+                generateQR(pkt);
+                const pct = ((packetIndex + 1) / total) * 100;
+                updateSenderProgress(pct);
+                updateSenderStatus(`📤 دور ${round} | ${packetIndex+1}/${total} (${Math.round(pct)}%)`);
+                logSender(`📦 ارسال بسته ${packetIndex+1}/${total}`, '');
+                packetIndex++;
+                senderTimer = setTimeout(() => sendNext(), delay * 1000);
+            } else {
+                state = 2;
+                senderTimer = setTimeout(() => sendNext(), 200);
+            }
+            return;
+        }
+
+        if (state === 2) {
+            const eor = `ROT|EOR|${round}|${total}`;
+            generateQR(eor);
+            updateSenderStatus(`🏁 دور ${round} تمام شد`);
+            logSender(`🏁 EOR دور ${round}`, 'highlight');
+            round++;
+            // 🔥 مهم: بعد از EOR، دوباره به حالت META برگرد
+            state = -1;
+            senderTimer = setTimeout(() => sendNext(), 1.2 * 1000);
+        }
+    }
+
+    sendNext();
+}
+
+fileInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    stopSender();
+
+    console.log("FILE NAME from input =", file.name);
+    console.log("FILE TYPE =", file.type);
+
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const data = new Uint8Array(ev.target.result);
+        let hex = '';
+        for (let i = 0; i < data.length; i++) hex += data[i].toString(16).padStart(2, '0');
+
+        const pcks = preparePackets(hex);
+        const mime = file.type || 'application/octet-stream';
+        const metaPacket = `ROT|META|${file.name}|${mime}`;
+
+        logSender(`📂 فایل ${file.name} (${data.length} بایت) آماده شد`, 'success');
+        logSender(`📦 تعداد بسته‌ها: ${pcks.length}`, 'highlight');
+
+        startTransmission(pcks, metaPacket);
+    };
+    reader.readAsArrayBuffer(file);
+});
+
+stopBtn.addEventListener('click', stopSender);
+sizeSlider.addEventListener('input', function() {
+    qrSize = parseInt(this.value);
+    sizeLabel.textContent = qrSize;
+    if (!isSending) generateQR(currentQRData);
+});
+speedSlider.addEventListener('input', function() {
+    delay = parseFloat(this.value);
+    speedLabel.textContent = delay.toFixed(2);
+});
+fillColorInput.addEventListener('input', function() {
+    fillColor = this.value;
+    if (!isSending) generateQR(currentQRData);
+});
+backColorInput.addEventListener('input', function() {
+    backColor = this.value;
+    if (!isSending) generateQR(currentQRData);
+});
+generateQR('ROT|IDLE');
+
+// ============================================================
+//  بخش دریافت (Receiver) - بدون تغییر
+// ============================================================
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const receiverStatus = document.getElementById('receiverStatus');
+const receiverFill = document.getElementById('receiverFill');
+const receiverLog = document.getElementById('receiverLog');
+const resetReceiverBtn = document.getElementById('resetReceiverBtn');
+const startCameraBtn = document.getElementById('startCameraBtn');
+
+let packetsRecv = {}, totalPackets = null, isCompleteRecv = false;
+let lastTimestamp = 0;
+let mediaStream = null, filename = 'received.bin', mimeType = 'application/octet-stream';
+let scanRequestId = null, downloadUrl = null;
+let metaReceived = false;
+
+function logReceiver(msg, type = '') {
+    const d = document.createElement('div');
+    d.innerHTML = `<span class="${type}">${msg}</span>`;
+    receiverLog.appendChild(d);
+    receiverLog.scrollTop = receiverLog.scrollHeight;
+    if (receiverLog.children.length > 100) receiverLog.removeChild(receiverLog.firstChild);
+}
+
+function stopCamera() {
+    if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+    video.srcObject = null;
+    if (scanRequestId) { cancelAnimationFrame(scanRequestId); scanRequestId = null; }
+    logReceiver('📷 دوربین خاموش شد', 'highlight');
+}
+
+function resetReceiver() {
+    receiverStatus.querySelectorAll('.btn').forEach(b => b.remove());
+    if (downloadUrl) { URL.revokeObjectURL(downloadUrl); downloadUrl = null; }
+    packetsRecv = {}; totalPackets = null; isCompleteRecv = false;
+    filename = 'received.bin'; mimeType = 'application/octet-stream';
+    metaReceived = false;
+    receiverFill.style.width = '0%'; receiverFill.style.background = 'red';
+    receiverStatus.innerHTML = '🔄 آماده برای فایل جدید...';
+    if (mediaStream) stopCamera();
+    logReceiver('🔄 ریست شد، منتظر فایل جدید', 'highlight');
+}
+
+function startCamera() {
+    if (mediaStream) { logReceiver('📷 دوربین در حال اجراست', ''); return; }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(stream => {
+        mediaStream = stream;
+        video.srcObject = stream;
+        logReceiver('✅ دوربین روشن شد', 'success');
+        receiverStatus.innerHTML = '📷 در حال اسکن QR...';
+        if (!isCompleteRecv) {
+            if (scanRequestId) cancelAnimationFrame(scanRequestId);
+            scanRequestId = requestAnimationFrame(scanLoop);
+        }
+    })
+    .catch(err => {
+        logReceiver('❌ خطای دوربین: ' + err.message, 'error');
+        receiverStatus.innerHTML = '❌ دسترسی به دوربین ممکن نیست.<br>از HTTPS یا localhost استفاده کنید.';
+    });
+}
+
+function scanLoop() {
+    if (isCompleteRecv) { scanRequestId = null; return; }
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth || 400;
+        canvas.height = video.videoHeight || 400;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        try {
+            const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(img.data, img.width, img.height);
+            if (code && code.data) {
+                const now = Date.now();
+                if (now - lastTimestamp > 500) {
+                    lastTimestamp = now;
+                    logReceiver(`📥 اسکن شد: ${code.data.substring(0, 40)}...`, 'highlight');
+                    processPacket(code.data);
+                }
+            }
+        } catch (e) { /* ignore */ }
+    }
+    if (!isCompleteRecv) scanRequestId = requestAnimationFrame(scanLoop);
+    else scanRequestId = null;
+}
+
+function processPacket(data) {
+    if (isCompleteRecv) return;
+    const parts = data.split('|');
+    if (parts[0] !== 'ROT') {
+        logReceiver(`⏭️ نادیده (پیشوند نامعتبر): ${data.substring(0, 20)}`, '');
+        return;
+    }
+
+    if (parts[1] === 'META') {
+        if (isCompleteRecv) resetReceiver();
+        filename = parts[2] || 'received.bin';
+        mimeType = parts[3] || 'application/octet-stream';
+        metaReceived = true;
+        receiverStatus.innerHTML = `📄 دریافت: <strong>${filename}</strong>`;
+        logReceiver(`📄 META دریافت شد: ${filename} (${mimeType})`, 'success');
+        return;
+    }
+
+    if (parts[1] === 'DATA') {
+        if (!metaReceived) {
+            logReceiver(`⚠️ DATA قبل از META دریافت شد! نام فایل پیش‌فرض استفاده می‌شود.`, 'error');
+        }
+        const idx = parseInt(parts[2]);
+        const total = parseInt(parts[3]);
+        const expectedCrc = parseInt(parts[4]);
+        const chunk = parts[5];
+        const payload = `${idx}|${total}|${chunk}`;
+        const realCrc = crc32(payload);
+        if (realCrc !== expectedCrc) {
+            logReceiver(`⚠️ CRC نامعتبر برای بسته ${idx}`, 'error');
+            return;
+        }
+        if (!totalPackets) totalPackets = total;
+        if (!packetsRecv[idx]) {
+            packetsRecv[idx] = chunk;
+            const count = Object.keys(packetsRecv).length;
+            const pct = Math.min(100, (count / totalPackets) * 100);
+            receiverFill.style.width = pct + '%';
+            let color;
+            if (pct < 40) color = `rgb(255, ${Math.round(pct * 6.375)}, 0)`;
+            else if (pct < 70) color = `rgb(${Math.round(255 - (pct-40)*8.5)}, 255, 0)`;
+            else color = `rgb(0, 255, ${Math.round((pct-70)*8.5)})`;
+            receiverFill.style.background = color;
+            receiverStatus.innerHTML = `📥 <strong>${count}</strong> / ${totalPackets} (${Math.round(pct)}%)`;
+            logReceiver(`📦 بسته ${idx}/${totalPackets}`, '');
+            if (count === totalPackets) finishTransferRecv();
+        }
+        return;
+    }
+
+    if (parts[1] === 'EOR') {
+        const round = parts[2] || '?';
+        const count = Object.keys(packetsRecv).length;
+        logReceiver(`🏁 پایان دور ${round} - ${count}/${totalPackets || '?'} بسته`, 'highlight');
+        receiverStatus.innerHTML = `🏁 دور ${round} تمام شد (${count} بسته)`;
+    }
+}
+
+function finishTransferRecv() {
+    if (isCompleteRecv) return;
+    isCompleteRecv = true;
+    stopCamera();
+    if (scanRequestId) { cancelAnimationFrame(scanRequestId); scanRequestId = null; }
+    logReceiver('✅ همه بسته‌ها دریافت شد!', 'success');
+
+    let hex = '';
+    for (let i = 1; i <= totalPackets; i++) {
+        if (packetsRecv[i]) hex += packetsRecv[i];
+        else {
+            logReceiver(`❌ بسته ${i} گم شد`, 'error');
+            receiverStatus.innerHTML = '❌ داده ناقص است';
+            isCompleteRecv = false;
+            startCamera();
+            return;
+        }
+    }
+    if (hex.length % 2 !== 0) {
+        logReceiver('❌ داده هگز ناقص', 'error');
+        receiverStatus.innerHTML = '❌ داده خراب است';
+        isCompleteRecv = false;
+        startCamera();
+        return;
+    }
+
+    try {
+        const bytes = new Uint8Array(hex.match(/.{2}/g).map(b => parseInt(b, 16)));
+        const blob = new Blob([bytes], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        downloadUrl = url;
+        receiverStatus.innerHTML = `
+            ✅ فایل <strong>${filename}</strong> با موفقیت دریافت شد! (${bytes.length} بایت)
+            <br><br>
+            <a href="${url}" download="${filename}" class="btn btn-primary" style="font-size:18px;padding:12px 30px;" onclick="setTimeout(()=>URL.revokeObjectURL('${url}'), 5000);">⬇️ دانلود فایل</a>
+            <button class="btn btn-secondary" onclick="resetReceiver()" style="font-size:14px;">🔄 دریافت فایل جدید</button>
+        `;
+        receiverFill.style.background = '#0f0';
+        logReceiver(`💾 فایل ${filename} آماده دانلود است`, 'success');
+    } catch (e) {
+        logReceiver('❌ خطا در ساخت فایل: ' + e.message, 'error');
+        receiverStatus.innerHTML = '❌ خطا در ساخت فایل';
+        isCompleteRecv = false;
+        startCamera();
+    }
+}
+
+startCameraBtn.addEventListener('click', startCamera);
+resetReceiverBtn.addEventListener('click', resetReceiver);
+
+// ============================================================
+//  مدیریت تب‌ها
+// ============================================================
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+        document.getElementById(this.dataset.tab).classList.add('active');
+
+        if (this.dataset.tab === 'receiver' && !mediaStream && !isCompleteRecv) {
+            receiverStatus.innerHTML = '📷 برای شروع، دکمهٔ «شروع دوربین» را بزنید.';
+        }
+        if (this.dataset.tab === 'sender' && !isSending) {
+            generateQR('ROT|IDLE');
+        }
+    });
+});
+
+// مقداردهی اولیه
+generateQR('ROT|IDLE');
+</script>
+</body>
+</html>
